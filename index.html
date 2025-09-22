@@ -8,6 +8,8 @@
 	<meta name="apple-mobile-web-app-capable" content="yes">
 	<meta name="apple-mobile-web-app-status-bar-style" content="default">
 	<meta name="apple-mobile-web-app-title" content="Trellis">
+	<meta name="mobile-web-app-capable" content="yes">
+
 
 
 	<link rel="apple-touch-icon" href="icon.png">
@@ -454,47 +456,47 @@
             }
 			
 		/* Small phones / “Zoomed” */
-			@media (max-width: 430px) {
-			  .header { padding: 14px 12px; }
-			  .header h1 { font-size: 18px; }
-			  .connection-status {
-				position: static; display:inline-block; margin-top:6px;
-			  }
-			  .today-header { padding: 12px; }
-			  .today-header .btn { padding:6px 10px; }
-			  #dayPrev, #dayNext, #weekPrev, #weekNext { min-width: 36px; padding:6px 8px; }
-			  /* Month grid: enable horizontal scroll instead of squishing */
-			  .month-grid-wrap { overflow-x:auto; }
-			  .month-grid { min-width: 640px; }
-			}
+		@media (max-width: 430px) {
+		  .header { padding: 14px 12px; }
+		  .header h1 { font-size: 18px; }
+		  .connection-status {
+			position: static; display:inline-block; margin-top:6px;
+		  }
+		  .today-header { padding: 12px; }
+		  .today-header .btn { padding:6px 10px; }
+		  #dayPrev, #dayNext, #weekPrev, #weekNext { min-width: 36px; padding:6px 8px; }
+		  /* Month grid: enable horizontal scroll instead of squishing */
+		  .month-grid-wrap { overflow-x:auto; }
+		  .month-grid { min-width: 640px; }
+		}
 
-            
-            .app-container {
-                border-radius: 0;
-                min-height: 100vh;
-            }
-            
-            .header {
-                padding: 16px;
-            }
-            
-            .header h1 {
-                font-size: 20px;
-            }
-            
-            .tab-content {
-                padding: 16px;
-            }
-            
-            .week-grid {
-                grid-template-columns: 1fr;
-            }
-            
-            .modal-content {
-                margin: 20px;
-                width: calc(100% - 40px);
-            }
-        }
+		
+		.app-container {
+			border-radius: 0;
+			min-height: 100vh;
+		}
+		
+		.header {
+			padding: 16px;
+		}
+		
+		.header h1 {
+			font-size: 20px;
+		}
+		
+		.tab-content {
+			padding: 16px;
+		}
+		
+		.week-grid {
+			grid-template-columns: 1fr;
+		}
+		
+		.modal-content {
+			margin: 20px;
+			width: calc(100% - 40px);
+		}
+	}
 		/* --- Rescheduler Options Drawer --- */
 .drawer {
   position: fixed; top: 0; right: 0; width: 360px; max-width: 90vw; height: 100vh;
@@ -515,20 +517,7 @@
 .drawer-footer { padding: 12px 16px; border-top: 1px solid #e2e8f0; display:flex; gap:8px; justify-content:flex-end; }
 
 
-/* Chips */
-	.chip {
-	  display:inline-block;
-	  padding:4px 10px;
-	  border:1px solid #e5e7eb;
-	  border-radius:999px;
-	  font-size:12px;
-	  background:#fff;
-	  color:#334155;
-	  box-shadow: 0 1px 1px rgba(0,0,0,.03);
-	  margin-right:6px;
-	  transition: transform .05s ease, box-shadow .15s ease;
-	}
-	.chip:hover { box-shadow: 0 2px 6px rgba(0,0,0,.06); transform: translateY(-1px); }
+
 
     </style>
 </head>
@@ -1207,84 +1196,91 @@
 
         // Render today's lessons
        function renderToday() {
-			  const container = document.getElementById('todayLessons');
+  const container = document.getElementById('todayLessons');
 
-			  // If weekend, jump to upcoming Monday
-			  const d = new Date(dayCursor);
-			  const dow = d.getDay(); // 0 Sun ... 6 Sat
-			  if (dow === 6) d.setDate(d.getDate() + 2);
-			  if (dow === 0) d.setDate(d.getDate() + 1);
-			  dayCursor = d;
+  // If weekend, jump to upcoming Monday
+  const d = new Date(dayCursor);
+  const dow = d.getDay(); // 0 Sun ... 6 Sat
+  if (dow === 6) d.setDate(d.getDate() + 2);
+  if (dow === 0) d.setDate(d.getDate() + 1);
+  dayCursor = d;
 
-			  // Update header
-			
+  // Update header (these were commented/missing)
+  document.getElementById('todayDate').textContent =
+    d.toLocaleDateString('en-US', { month: 'long', day: 'numeric' });
+  document.getElementById('todayDay').textContent =
+    d.toLocaleDateString('en-US', { weekday: 'long' });
 
-			  if (!scheduleData || scheduleData.length === 0) {
-				container.innerHTML = `
-				  <div class="no-lessons">
-					<h3>📡 Loading lessons...</h3>
-					<p>Please wait while we fetch your schedule.</p>
-				  </div>`;
-				return;
-			  }
+  if (!scheduleData || scheduleData.length === 0) {
+    container.innerHTML = `
+      <div class="no-lessons">
+        <h3>📡 Loading lessons...</h3>
+        <p>Please wait while we fetch your schedule.</p>
+      </div>`;
+    return;
+  }
 
-			  const today = formatDate(d);
-			  const lessons = scheduleData.filter(l => l.date === today);
-			  const breaks = lessons.filter(isBreakLike);
-			const normals = lessons.filter(l => !isBreakLike(l));
+  const ymd = formatDate(d);
+  const lessons = scheduleData.filter(l => l.date === ymd);
+  if (lessons.length === 0) {
+    container.innerHTML = `
+      <div class="no-lessons">
+        <h3>🎉 No lessons scheduled!</h3>
+        <p>Enjoy your free time or catch up on other activities.</p>
+        <p style="margin-top:16px; font-size:14px;">${ymd}</p>
+      </div>`;
+    return;
+  }
 
+  // Split breaks vs normal
+  const breaks = lessons.filter(isBreakLike);
+  const normals = lessons.filter(l => !isBreakLike(l));
 
-			  if (lessons.length === 0) {
-				container.innerHTML = `
-				  <div class="no-lessons">
-					<h3>🎉 No lessons scheduled!</h3>
-					<p>Enjoy your free time or catch up on other activities.</p>
-					<p style="margin-top:16px; font-size:14px;">${today}</p>
-				  </div>`;
-				return;
-			  }
+  // Group shared subjects (subject + lesson) → kids merged
+  const groups = groupBySubjectAndLesson(normals).sort((a, b) => {
+    const s = compareByOrder(a.subject, b.subject, subjectOrder);
+    if (s !== 0) return s;
+    return compareByOrder(a.children[0] || '', b.children[0] || '', childOrder);
+  });
 
-			  // Group by (subject + lesson) to put shared subjects together
-			  const groups = groupBySubjectAndLesson(normals).sort((a,b) => {
-				// sort groups by subject, then first child by order
-				const s = compareByOrder(a.subject, b.subject, subjectOrder);
-				if (s !== 0) return s;
-				return compareByOrder(a.children[0] || '', b.children[0] || '', childOrder);
-			  });
+  // Break banner (single row)
+  const breakBanner = breaks.length
+    ? `<div class="lesson-card" style="background:#fff7ed;border-color:#fdba74">
+         <div class="lesson-subject">🗓️ No School / Break</div>
+         <div class="lesson-details">${
+           breaks.map(b => [b.subject, b.lesson].filter(Boolean).join(' • ')).join(', ')
+         }</div>
+       </div>`
+    : '';
 
-			  container.innerHTML = groups.map(g => {
-			  const breakBanner = breaks.length
-				  ? `<div class="lesson-card" style="background:#fff7ed;border-color:#fdba74">
-					   <div class="lesson-subject">🗓️ No School / Break</div>
-					   <div class="lesson-details">${
-						  breaks.map(b=>[b.subject,b.lesson].filter(Boolean).join(' • ')).join(', ')
-						}</div>
-					 </div>`
-				  : '';
-				container.innerHTML = breakBanner + groups.map(...).join('');
-				const lessonIdSeed = `${today}-${g.subject}-${g.lesson}`;
-				const childNames = g.children.sort((a,b)=>compareByOrder(a,b,childOrder)).join(' & ');
-				const color = getSubjectColor(g.subject);
-				  .join('');
+  const groupCards = groups.map(g => {
+    const lessonIdSeed = `${ymd}-${g.subject}-${g.lesson || ''}`;
+    const childNames = g.children
+      .sort((a, b) => compareByOrder(a, b, childOrder))
+      .join(' & ');
+    const color = getSubjectColor(g.subject);
+    const details = g.lesson
+      ? `<div class="lesson-details" style="margin-top:4px;">${g.lesson}</div>`
+      : '';
 
-				// “details” line (no 👤). Example: "pp. 74–75" if present
-				const details = g.lesson ? `<div class="lesson-details" style="margin-top:4px;">${g.lesson}</div>` : '';
+    return `
+      <div class="lesson-card" data-lesson-id="${lessonIdSeed}">
+        <div class="lesson-subject">
+          <div class="subject-color" style="background-color:${color}"></div>
+          ${g.subject}
+        </div>
+        <div class="chips">
+          <span class="chip" style="--chip:${color}">
+            <span class="chip-dot"></span>${childNames}
+          </span>
+        </div>
+        ${details}
+      </div>`;
+  }).join('');
 
-				return `
-				  <div class="lesson-card" data-lesson-id="${lessonIdSeed}">
-					<div class="lesson-subject">
-					  <div class="subject-color" style="background-color:${getSubjectColor(g.subject)}"></div>
-					  ${g.subject}
-					</div>
-					<div class="chips">
-					  <span class="chip" style="--chip:${color}">
-						<span class="chip-dot"></span>${childNames}
-					  </span>
-					</div>
-					${details}
-				  </div>`;
-			  }).join('');
-			}
+  container.innerHTML = breakBanner + groupCards;
+}
+
 
         // Render week view
         function renderWeek() {
@@ -1359,69 +1355,100 @@
 
 }
         function renderSchedule() {
-			  const container = document.getElementById('scheduleView');
-			  if (!scheduleData || scheduleData.length === 0) {
-				container.innerHTML = `<div class="no-lessons"><h3>📡 Loading schedule...</h3></div>`;
-				return;
-			  }
+  const container = document.getElementById('scheduleView');
+  if (!scheduleData || scheduleData.length === 0) {
+    container.innerHTML = `<div class="no-lessons"><h3>📡 Loading schedule...</h3></div>`;
+    return;
+  }
 
-			  // Show the current month (you can later add arrows like week/day)
-			  const now = new Date();
-			  const year = now.getFullYear();
-			  const month = now.getMonth(); // 0-based
-			  const first = new Date(year, month, 1);
-	
+  // Base month from monthCursor (not "now")
+  const base = new Date(monthCursor);
+  const year = base.getFullYear();
+  const month = base.getMonth();
 
-			  // Build a 6x7 grid, Sunday-start calendar
-			  const startCell = new Date(first);
-			  startCell.setDate(first.getDate() - first.getDay()); // back to Sunday
-			  const days = [];
-			  for (let i = 0; i < 42; i++) {
-				const d = new Date(startCell);
-				d.setDate(startCell.getDate()+i);
-				days.push(d);
-			  }
+  // First/last day of the month
+  const first = new Date(year, month, 1);
+  const last  = new Date(year, month + 1, 0);
 
-			  const lessonsByDate = scheduleData.reduce((acc, l) => {
-				(acc[l.date] ||= []).push(l);
-				return acc;
-			  }, {});
+  // Start = Sunday of the week containing the 1st
+  const start = new Date(first);
+  start.setDate(first.getDate() - first.getDay());
 
-			  container.innerHTML = `
-				<div class="lesson-card">
-				  <div class="lesson-subject">
-					${now.toLocaleDateString('en-US', { month:'long', year:'numeric' })}
-				  </div>
-				  <div class="month-grid-wrap">
-					<div class="month-grid" style="display:grid; grid-template-columns: repeat(7, 1fr); gap:10px;">
-					${['Sun','Mon','Tue','Wed','Thu','Fri','Sat'].map(d=>`
-					  <div style="text-align:center; font-size:12px; color:#64748b; text-transform:uppercase; letter-spacing:.05em;">${d}</div>
-					`).join('')}
-					${days.map(d=>{
-					  const ymd = formatDate(d);
-					  const inMonth = d.getMonth() === month;
-					  const list = (lessonsByDate[ymd] || []).sort(sortBySubjectThenChild);
-					  return `
-						<div style="border:1px solid #e5e7eb; border-radius:10px; padding:8px; background:${inMonth ? 'white' : '#f8fafc'}; min-height:100px;">
-						  <div style="font-size:12px; color:${inMonth ? '#475569' : '#94a3b8'}; margin-bottom:6px;">${d.getDate()}</div>
-						  <div style="display:flex; flex-direction:column; gap:6px;">
-							${list.slice(0,4).map(l=>`
-							  <div style="display:flex; gap:6px; align-items:center;">
-								<div class="subject-color" style="background-color:${getSubjectColor(l.subject)}"></div>
-								<div style="font-size:12px; line-height:1.2;">
-								  <div style="font-weight:600;">${l.subject}</div>
-								  <div style="color:#64748b;">${formatLessonDetails(l)}</div>
-								</div>
-							  </div>
-							`).join('')}
-							${list.length>4 ? `<div style="font-size:12px; color:#64748b;">+${list.length-4} more</div>`:''}
-						  </div>
-						</div>`;
-					}).join('')}
-					</div>
-				  </div>
-				</div>`;
-			}
+  // End = Saturday of the week containing the last day
+  const end = new Date(last);
+  end.setDate(last.getDate() + (6 - last.getDay()));
+
+  // Build dynamic range (only weeks that intersect the month)
+  const days = [];
+  for (let d = new Date(start); d <= end; d.setDate(d.getDate() + 1)) {
+    days.push(new Date(d));
+  }
+
+  // Index lessons by date
+  const lessonsByDate = scheduleData.reduce((acc, l) => {
+    (acc[l.date] ||= []).push(l);
+    return acc;
+  }, {});
+
+  // Header w/ arrows
+  const monthLabel = base.toLocaleDateString('en-US', { month: 'long', year: 'numeric' });
+
+  container.innerHTML = `
+    <div class="lesson-card">
+      <div class="today-header" style="display:flex; align-items:center; justify-content:space-between;">
+        <button class="btn btn-secondary" id="monthPrev">◀</button>
+        <div>
+          <div class="today-date">${monthLabel}</div>
+          <div class="today-day" style="text-align:center">Monthly view</div>
+        </div>
+        <div style="display:flex; gap:8px;">
+          <button class="btn btn-secondary" id="monthToday">This Month</button>
+          <button class="btn btn-secondary" id="monthNext">▶</button>
+        </div>
+      </div>
+
+      <div class="month-grid-wrap">
+        <div class="month-grid" style="display:grid; grid-template-columns: repeat(7, 1fr); gap:10px;">
+          ${['Sun','Mon','Tue','Wed','Thu','Fri','Sat'].map(d => `
+            <div style="text-align:center; font-size:12px; color:#64748b; text-transform:uppercase; letter-spacing:.05em;">${d}</div>
+          `).join('')}
+
+          ${days.map(d => {
+            const ymd = formatDate(d);
+            const inMonth = d.getMonth() === month;
+            const list = (lessonsByDate[ymd] || []).sort(sortBySubjectThenChild);
+
+            return `
+              <div style="
+                border:1px solid #e5e7eb;
+                border-radius:10px;
+                padding:8px;
+                background:${inMonth ? 'white' : '#f8fafc'};
+                min-height:100px;
+              ">
+                <div style="font-size:12px; color:${inMonth ? '#475569' : '#94a3b8'}; margin-bottom:6px;">
+                  ${d.getDate()}
+                </div>
+                <div style="display:flex; flex-direction:column; gap:6px;">
+                  ${list.slice(0,4).map(l => `
+                    <div style="display:flex; gap:6px; align-items:center;">
+                      <div class="subject-color" style="background-color:${getSubjectColor(l.subject)}"></div>
+                      <div style="font-size:12px; line-height:1.2;">
+                        <div style="font-weight:600;">${l.subject}</div>
+                        <div style="color:#64748b;">${formatLessonDetails(l)}</div>
+                      </div>
+                    </div>
+                  `).join('')}
+                  ${list.length > 4 ? `<div style="font-size:12px; color:#64748b;">+${list.length - 4} more</div>` : ''}
+                </div>
+              </div>`;
+          }).join('')}
+        </div>
+      </div>
+    </div>
+  `;
+}
+
 
 
 		function renderRescheduler(){
