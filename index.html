@@ -1,0 +1,1649 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <!-- File: index.html -->
+    <!-- Updated: September 21, 2025 5:15 PM -->
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+	<meta name="apple-mobile-web-app-capable" content="yes">
+	<meta name="apple-mobile-web-app-status-bar-style" content="default">
+	<meta name="apple-mobile-web-app-title" content="Trellis">
+
+
+	<link rel="apple-touch-icon" href="icon.png">
+	<link rel="icon" type="image/png" sizes="192x192" href="icon.png">
+	<link rel="icon" type="image/png" sizes="512x512" href="icon.png">
+
+    <title>Homeschool Calendar</title>
+    <meta name="theme-color" content="#4f46e5">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+		:root{
+		  --card-shadow: 0 8px 24px rgba(0,0,0,0.06);
+		  --muted: #64748b;
+		}
+		.lesson-card { box-shadow: var(--card-shadow); }
+		.day-header  { background: #f6f8ff; }
+		.subject-color { outline: 2px solid rgba(0,0,0,0.04); }
+
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 10px;
+        }
+
+        .app-container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 16px;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.1);
+            overflow: hidden;
+            min-height: calc(100vh - 20px);
+        }
+
+        .header {
+            background: linear-gradient(135deg, #4f46e5 0%, #7c3aed 100%);
+            color: white;
+            padding: 20px;
+            text-align: center;
+            position: relative;
+        }
+
+        .header h1 {
+            font-size: 24px;
+            font-weight: 600;
+            margin-bottom: 4px;
+        }
+
+        .header .subtitle {
+            opacity: 0.9;
+            font-size: 14px;
+        }
+
+        .connection-status {
+            position: absolute;
+            top: 8px;
+            right: 8px;
+            padding: 4px 8px;
+            border-radius: 12px;
+            font-size: 11px;
+            font-weight: 600;
+        }
+
+        .status-online {
+            background: rgba(34, 197, 94, 0.2);
+            color: #22c55e;
+        }
+
+        .status-offline {
+            background: rgba(239, 68, 68, 0.2);
+            color: #ef4444;
+        }
+
+        .nav-tabs {
+            display: flex;
+            background: #f8fafc;
+            border-bottom: 1px solid #e2e8f0;
+        }
+
+        .nav-tab {
+            flex: 1;
+            padding: 16px;
+            text-align: center;
+            background: none;
+            border: none;
+            cursor: pointer;
+            font-weight: 500;
+            color: #64748b;
+            transition: all 0.2s;
+            border-bottom: 3px solid transparent;
+        }
+
+        .nav-tab.active {
+            color: #4f46e5;
+            border-bottom-color: #4f46e5;
+            background: white;
+        }
+
+        .tab-content {
+            display: none;
+            padding: 20px;
+            min-height: 400px;
+        }
+
+        .tab-content.active {
+            display: block;
+        }
+
+        .loading {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            padding: 40px;
+            color: #64748b;
+        }
+
+        .spinner {
+            width: 32px;
+            height: 32px;
+            border: 3px solid #e2e8f0;
+            border-radius: 50%;
+            border-top-color: #4f46e5;
+            animation: spin 1s ease-in-out infinite;
+            margin-bottom: 16px;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+
+        .today-header {
+            text-align: center;
+            margin-bottom: 24px;
+            padding: 20px;
+            background: #f8fafc;
+            border-radius: 12px;
+        }
+
+        .today-date {
+            font-size: 28px;
+            font-weight: 700;
+            color: #1e293b;
+            margin-bottom: 4px;
+        }
+
+        .today-day {
+            font-size: 16px;
+            color: #64748b;
+        }
+
+        .lessons-grid {
+            display: grid;
+            gap: 16px;
+        }
+
+        .lesson-card {
+            background: white;
+            border: 1px solid #e2e8f0;
+            border-radius: 12px;
+            padding: 16px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+            transition: all 0.2s;
+        }
+
+        .lesson-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 25px rgba(0,0,0,0.1);
+        }
+
+        .lesson-card.completed {
+            opacity: 0.7;
+            background: #f0fdf4;
+            border-color: #22c55e;
+        }
+
+        .lesson-subject {
+            font-size: 18px;
+            font-weight: 600;
+            margin-bottom: 4px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+		/* --- Pretty chips --- */
+		.chips { display:flex; flex-wrap:wrap; gap:6px; margin-top:6px; }
+		.chip {
+		  --chip:#6b7280;                 /* fallback */
+		  display:inline-flex; align-items:center; gap:6px;
+		  padding:6px 10px; border-radius:999px;
+		  background: color-mix(in srgb, var(--chip) 18%, white);
+		  border: 1px solid color-mix(in srgb, var(--chip) 28%, white);
+		  color:#1f2937; font-size:12.5px; font-weight:600;
+		  box-shadow: 0 1px 0 rgba(0,0,0,.04), inset 0 1px 0 rgba(255,255,255,.3);
+		}
+		.chip-dot { width:8px; height:8px; border-radius:999px; background: var(--chip); box-shadow: 0 0 0 2px rgba(255,255,255,.7) inset; }
+		.chip small { color:#334155; font-weight:500; }
+
+
+        .subject-color {
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            flex-shrink: 0;
+        }
+
+        .lesson-details {
+            color: #64748b;
+            font-size: 14px;
+            margin-bottom: 12px;
+        }
+
+        .lesson-actions {
+            display: flex;
+            gap: 8px;
+            margin-top: 12px;
+        }
+
+        .btn {
+            padding: 8px 16px;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 14px;
+            font-weight: 500;
+            transition: all 0.2s;
+        }
+
+        .btn-complete {
+            background: #22c55e;
+            color: white;
+        }
+
+        .btn-complete:hover {
+            background: #16a34a;
+        }
+
+        .btn-complete:disabled {
+            background: #9ca3af;
+            cursor: not-allowed;
+        }
+
+        .btn-reschedule {
+            background: #f59e0b;
+            color: white;
+        }
+
+        .btn-reschedule:hover {
+            background: #d97706;
+        }
+
+        .btn-secondary {
+            background: #f1f5f9;
+            color: #475569;
+            border: 1px solid #e2e8f0;
+        }
+
+        .btn-secondary:hover {
+            background: #e2e8f0;
+        }
+
+        /* Reschedule Modal */
+        .modal {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0,0,0,0.5);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 1000;
+            opacity: 0;
+            visibility: hidden;
+            transition: all 0.3s ease;
+        }
+
+        .modal.show {
+            opacity: 1;
+            visibility: visible;
+        }
+
+        .modal-content {
+            background: white;
+            border-radius: 12px;
+            padding: 24px;
+            max-width: 400px;
+            width: 90%;
+            max-height: 80vh;
+            overflow-y: auto;
+        }
+
+        .modal-header {
+            margin-bottom: 20px;
+        }
+
+        .modal-title {
+            font-size: 20px;
+            font-weight: 600;
+            color: #1e293b;
+            margin-bottom: 8px;
+        }
+
+        .modal-subtitle {
+            color: #64748b;
+            font-size: 14px;
+        }
+
+        .form-group {
+            margin-bottom: 16px;
+        }
+
+        .form-label {
+            display: block;
+            margin-bottom: 4px;
+            font-weight: 500;
+            color: #374151;
+        }
+
+        .form-input {
+            width: 100%;
+            padding: 8px 12px;
+            border: 1px solid #e2e8f0;
+            border-radius: 6px;
+            font-size: 14px;
+        }
+
+        .form-input:focus {
+            outline: none;
+            border-color: #4f46e5;
+            box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.1);
+        }
+
+        .modal-actions {
+            display: flex;
+            gap: 8px;
+            justify-content: flex-end;
+            margin-top: 20px;
+        }
+
+        .week-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 16px;
+        }
+
+        .day-card {
+            background: white;
+            border: 1px solid #e2e8f0;
+            border-radius: 12px;
+            overflow: hidden;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+        }
+
+        .day-header {
+            background: #f1f5f9;
+            padding: 16px;
+            border-bottom: 1px solid #e2e8f0;
+        }
+
+        .day-date {
+            font-size: 16px;
+            font-weight: 600;
+            color: #1e293b;
+            margin-bottom: 2px;
+        }
+
+        .day-name {
+            font-size: 12px;
+            color: #64748b;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+        }
+
+        .day-lessons {
+            padding: 16px;
+        }
+
+        .lesson-item {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding: 8px 0;
+            border-bottom: 1px solid #f1f5f9;
+        }
+
+        .lesson-item:last-child {
+            border-bottom: none;
+        }
+
+        .no-lessons {
+            text-align: center;
+            padding: 40px;
+            color: #64748b;
+        }
+
+        .no-lessons h3 {
+            margin-bottom: 8px;
+            color: #1e293b;
+        }
+
+        .message {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            padding: 12px 16px;
+            border-radius: 6px;
+            font-weight: 500;
+            z-index: 1000;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+            transform: translateX(400px);
+            transition: transform 0.3s ease;
+        }
+
+        .message.show {
+            transform: translateX(0);
+        }
+
+        .message.success {
+            background: #d1fae5;
+            color: #047857;
+        }
+
+        .message.error {
+            background: #fee2e2;
+            color: #dc2626;
+        }
+
+        .message.warning {
+            background: #fef3c7;
+            color: #92400e;
+        }
+
+        @media (max-width: 768px) {
+            body {
+                padding: 0;
+            }
+			
+		/* Small phones / “Zoomed” */
+			@media (max-width: 430px) {
+			  .header { padding: 14px 12px; }
+			  .header h1 { font-size: 18px; }
+			  .connection-status {
+				position: static; display:inline-block; margin-top:6px;
+			  }
+			  .today-header { padding: 12px; }
+			  .today-header .btn { padding:6px 10px; }
+			  #dayPrev, #dayNext, #weekPrev, #weekNext { min-width: 36px; padding:6px 8px; }
+			  /* Month grid: enable horizontal scroll instead of squishing */
+			  .month-grid-wrap { overflow-x:auto; }
+			  .month-grid { min-width: 640px; }
+			}
+
+            
+            .app-container {
+                border-radius: 0;
+                min-height: 100vh;
+            }
+            
+            .header {
+                padding: 16px;
+            }
+            
+            .header h1 {
+                font-size: 20px;
+            }
+            
+            .tab-content {
+                padding: 16px;
+            }
+            
+            .week-grid {
+                grid-template-columns: 1fr;
+            }
+            
+            .modal-content {
+                margin: 20px;
+                width: calc(100% - 40px);
+            }
+        }
+		/* --- Rescheduler Options Drawer --- */
+.drawer {
+  position: fixed; top: 0; right: 0; width: 360px; max-width: 90vw; height: 100vh;
+  background: #fff; border-left: 1px solid #e2e8f0; box-shadow: -20px 0 40px rgba(0,0,0,.08);
+  transform: translateX(110%); transition: transform .25s ease; z-index: 1100; display: flex; flex-direction: column;
+}
+.drawer.show { transform: translateX(0); }
+.drawer-header { padding: 16px; border-bottom: 1px solid #e2e8f0; }
+.drawer-title { font-size: 18px; font-weight: 600; color: #1e293b; }
+.drawer-body { padding: 14px 16px; overflow-y: auto; }
+.option-row { display: grid; grid-template-columns: 1fr auto; gap: 10px; align-items: center; margin-bottom: 12px; }
+.option-row label { color: #374151; font-weight: 500; }
+.help { color: #64748b; font-size: 12px; }
+.input-sm { padding: 6px 8px; border: 1px solid #e2e8f0; border-radius: 6px; font-size: 14px; width: 90px; }
+.tagset { display:flex; flex-wrap:wrap; gap:6px; margin-top:6px; }
+.tag { padding:4px 8px; border:1px solid #e2e8f0; border-radius:999px; cursor:pointer; font-size:12px; }
+.tag.on { background:#eef2ff; border-color:#c7d2fe; color:#4338ca; }
+.drawer-footer { padding: 12px 16px; border-top: 1px solid #e2e8f0; display:flex; gap:8px; justify-content:flex-end; }
+
+
+/* Chips */
+	.chip {
+	  display:inline-block;
+	  padding:4px 10px;
+	  border:1px solid #e5e7eb;
+	  border-radius:999px;
+	  font-size:12px;
+	  background:#fff;
+	  color:#334155;
+	  box-shadow: 0 1px 1px rgba(0,0,0,.03);
+	  margin-right:6px;
+	  transition: transform .05s ease, box-shadow .15s ease;
+	}
+	.chip:hover { box-shadow: 0 2px 6px rgba(0,0,0,.06); transform: translateY(-1px); }
+
+    </style>
+</head>
+<body>
+    <div class="app-container">
+        <header class="header">
+            <div class="connection-status" id="connectionStatus">
+                <span>●</span> <span id="statusText">Connecting...</span>
+            </div>
+            <h1>📚 Homeschool Calendar</h1>
+            <div class="subtitle" id="currentDate"></div>
+        </header>
+
+        <nav class="nav-tabs">
+            <button class="nav-tab active" data-tab="today">Today</button>
+            <button class="nav-tab" data-tab="week">This Week</button>
+            <button class="nav-tab" data-tab="schedule">Schedule</button>
+			<button class="nav-tab" data-tab="rescheduler">Rescheduler</button>  <!-- NEW -->
+			<button class="nav-tab" data-tab="analysis">Analysis</button>
+        </nav>
+
+        <main>
+            <!-- Today Tab -->
+            <div id="today" class="tab-content active">
+                <div class="today-header">
+                    <div style="display:flex; align-items:center; justify-content:space-between;">
+					  <button class="btn btn-secondary" id="dayPrev">◀</button>
+					  <div>
+						<div class="today-date" id="todayDate"></div>
+						<div class="today-day" id="todayDay"></div>
+					  </div>
+					  <div style="display:flex; gap:8px;">
+						<button class="btn btn-secondary" id="dayToday">Today</button>
+						<button class="btn btn-secondary" id="dayNext">▶</button>
+					  </div>
+					</div>
+
+                </div>
+                
+                <div id="todayLessons" class="lessons-grid">
+                    <div class="loading">
+                        <div class="spinner"></div>
+                        <div>Loading today's lessons...</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Week Tab -->
+            <div id="week" class="tab-content">
+			  <div class="today-header" style="display:flex; align-items:center; justify-content:space-between;">
+				<button class="btn btn-secondary" id="weekPrev">◀</button>
+				<div>
+				  <div class="today-date" id="weekRangeLabel"></div>
+				  <div class="today-day"  id="weekRangeSub"></div>
+				</div>
+				<div style="display:flex; gap:8px;">
+				  <button class="btn btn-secondary" id="weekToday">This Week</button>
+				  <button class="btn btn-secondary" id="weekNext">▶</button>
+				</div>
+			  </div>
+			  <div id="weekView" class="week-grid">
+
+                    <div class="loading">
+                        <div class="spinner"></div>
+                        <div>Loading this week...</div>
+                    </div>
+                </div>
+				</div>
+
+            <!-- Schedule Tab -->
+            <div id="schedule" class="tab-content">
+                <div id="scheduleView" class="lessons-grid">
+                    <div class="loading">
+                        <div class="spinner"></div>
+                        <div>Loading schedule...</div>
+                    </div>
+                </div>
+            </div>
+						<!-- Rescheduler Tab (NEW) -->
+			<div id="rescheduler" class="tab-content">
+			  <div class="lessons-grid" style="gap:12px;">
+				<div class="lesson-card">
+				  <div class="lesson-subject">Reschedule</div>
+
+				  <div class="form-group" style="margin-top:10px;">
+					<label class="form-label" for="toDate">Drop target date</label>
+					<input id="toDate" type="date" class="form-input" style="max-width:220px;">
+				  </div>
+
+				  <!-- NEW: Options button lives here -->
+				  <div style="display:flex; gap:8px; margin:10px 0 12px;">
+					<button class="btn btn-secondary" id="btnReschedOptions">⚙️ Options</button>
+				  </div>
+
+				  <!-- Drop zone -->
+				  <div id="dropZone" class="lesson-card" style="border:2px dashed #e2e8f0; background:#fafafa; text-align:center; padding:16px;">
+					Drag a lesson here to reschedule to the selected date
+				  </div>
+
+				  <div id="lastAction" style="margin-top:10px;"><small>—</small></div>
+				</div>
+			  </div>
+			</div>
+			
+			<!-- Analysis Tab (COMING SOON!) -->
+			<div id="analysis" class="tab-content">
+			  <div class="lesson-card">
+				<div class="lesson-subject">Analysis (coming soon)</div>
+				<div class="lesson-details">We’ll add streaks, mastery, load by day, etc.</div>
+			  </div>
+			</div>
+
+					</main>
+				</div>
+
+    <!-- Reschedule Modal -->
+    <div id="rescheduleModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <div class="modal-title">📅 Reschedule Lesson</div>
+                <div class="modal-subtitle" id="rescheduleSubtitle"></div>
+            </div>
+            
+            <div class="form-group">
+                <label class="form-label">New Date:</label>
+                <input type="date" id="newDate" class="form-input">
+            </div>
+            
+            <div class="form-group">
+                <label class="form-label">Reason:</label>
+                <input type="text" id="rescheduleReason" class="form-input" placeholder="Why are you rescheduling?" maxlength="100">
+            </div>
+            
+            <div class="modal-actions">
+                <button class="btn btn-secondary" onclick="closeRescheduleModal()">Cancel</button>
+                <button class="btn btn-reschedule" onclick="confirmReschedule()">📅 Reschedule</button>
+
+            </div>
+        </div>
+    </div>
+	<!-- Rescheduler Options Drawer (NEW) -->
+		<div id="reschedDrawer" class="drawer" aria-hidden="true">
+		  <div class="drawer-header">
+			<div class="drawer-title">Reschedule Options</div>
+			<div class="help">These affect how future reschedules behave.</div>
+		  </div>
+		  <div class="drawer-body">
+			<div class="option-row">
+			  <label>Shift length (days)</label>
+			  <input id="opt_shiftDays" type="number" class="input-sm" min="0" step="1">
+			</div>
+
+			<div class="option-row">
+			  <label>Respect breaks/blackouts</label>
+			  <input id="opt_respectBreaks" type="checkbox">
+			</div>
+
+			<div class="option-row">
+			  <label>Avoid double-ups</label>
+			  <input id="opt_avoidDouble" type="checkbox">
+			</div>
+
+			<div class="option-row">
+			  <label>Max lessons/day</label>
+			  <input id="opt_maxPerDay" type="number" class="input-sm" min="1" step="1">
+			</div>
+
+			<div class="option-row" style="grid-template-columns:1fr;">
+			  <div>
+				<label>Reason tags</label>
+				<div id="opt_reasonTags" class="tagset"></div>
+				<div class="help">Click to toggle quick reasons (you can still type a custom one).</div>
+			  </div>
+			</div>
+
+			<div class="option-row">
+			  <label>Show preview before apply</label>
+			  <input id="opt_preview" type="checkbox">
+			</div>
+
+			<div class="option-row">
+			  <label>Smart nudges</label>
+			  <input id="opt_nudges" type="checkbox">
+			</div>
+		  </div>
+		  <div class="drawer-footer">
+			<button class="btn btn-secondary" id="optCancel">Cancel</button>
+			<button class="btn btn-reschedule" id="optSave">Save</button>
+		  </div>
+		</div>
+
+
+    <script>
+	console.log("✅ JS parsed successfully");
+	
+	
+        // Configuration
+        const CONFIG = {
+            API_URL: 'https://script.google.com/macros/s/AKfycbwJSvjxuUW0eVMSLAaUVXFay1QgDcgTCqsnzGG4_U0fCmwuHQi3P_QoDASNk49MF_fmEw/exec'
+        };
+// ---- Global crash reporter (add right after CONFIG) ----
+		(function () {
+		  const statusEl = document.getElementById('connectionStatus');
+		  const textEl = document.getElementById('statusText');
+
+		  function showFatal(msg) {
+			console.error('[Fatal]', msg);
+			if (statusEl) statusEl.className = 'connection-status status-offline';
+			if (textEl)   textEl.textContent = 'Error';
+			const c = document.createElement('div');
+			c.className = 'message error show';
+			c.style.maxWidth = '520px';
+			c.style.whiteSpace = 'pre-wrap';
+			c.textContent = `❌ Script error: ${msg}`;
+			document.body.appendChild(c);
+		  }
+
+		  window.addEventListener('error', (e) => {
+			// Uncaught synchronous errors
+			showFatal(e && (e.message || e.error && e.error.message) || 'Unknown error');
+		  });
+
+		  window.addEventListener('unhandledrejection', (e) => {
+			// Uncaught Promise rejections
+			const m = (e && e.reason && (e.reason.message || String(e.reason))) || 'Unhandled rejection';
+			showFatal(m);
+		  });
+		})();
+
+        // Global state
+			let scheduleData = [];
+			let subjectColors = {};
+			let currentView = 'today';
+			let completedLessons = new Set();
+			let connectionStatus = 'offline';
+			let currentRescheduleLesson = null;
+
+
+			// === View state ===
+			let dayCursor  = normalizeToday(new Date());      // show Monday immediately on weekends
+			let weekCursor = getUpcomingMonday(new Date());   // “This Week” = upcoming M–F on weekends
+			let monthCursor = new Date();  // points to any day in the shown month
+
+
+
+			// Soft, bright-but-pleasant fallback colors (overridden by your sheet)
+			const SOFT_COLORS = {
+			  'Math': '#60a5fa',
+			  'Reading': '#34d399',
+			  'Science': '#fbbf24',
+			  'Social Studies': '#f87171',
+			  'Handwriting': '#a78bfa',
+			  'Spelling': '#fb7185',
+			  'Devotional': '#818cf8'
+			};
+
+			// Ordering pulled from your sheet (via getSubjects)
+			let subjectOrder = [];
+			let childOrder = [];
+
+			// Replace DEFAULT_COLORS use with the softer palette (still overridden by sheet colors)
+			const DEFAULT_COLORS = SOFT_COLORS;
+
+
+
+		
+		
+		// === Rescheduler option state (persisted) ===
+		const OPTS_KEY = 'homeschool_rescheduler_options';
+		const DEFAULT_OPTS = {
+		  shiftDays: 0,
+		  respectBreaks: true,
+		  avoidDouble: true,
+		  maxPerDay: 4,
+		  reasonTags: ['sick','field trip','too long','melt-down','appointment'],
+		  activeTags: ['too long'],
+		  preview: true,
+		  nudges: true
+		};
+		let RESCHED_OPTS = loadReschedOptions();
+
+		function loadReschedOptions(){
+		  try {
+			const raw = localStorage.getItem(OPTS_KEY);
+			const parsed = raw ? JSON.parse(raw) : {};
+			return { ...DEFAULT_OPTS, ...parsed };
+		  } catch(_) { return { ...DEFAULT_OPTS }; }
+		}
+		function saveReschedOptions(){
+		  try { localStorage.setItem(OPTS_KEY, JSON.stringify(RESCHED_OPTS)); } catch(_) {}
+		}
+
+
+        // Initialize app
+        document.addEventListener('DOMContentLoaded', async () => {
+		  try {
+			console.log('App starting…');
+			loadCompletedLessons();
+			setupEventListeners();
+			updateCurrentDate();
+
+			await loadData();
+			updateConnectionStatus('online');
+			renderCurrentView();
+		  } catch (err) {
+			console.error("❌ Boot failed:", err);
+			updateConnectionStatus('offline');
+			showMessage("❌ App failed to start: " + err.message, "error");
+		  }
+		});
+
+
+        // Load completed lessons
+        function loadCompletedLessons() {
+            try {
+                const saved = localStorage.getItem('homeschool_completed_lessons');
+                if (saved) {
+                    completedLessons = new Set(JSON.parse(saved));
+                }
+            } catch (e) {
+                completedLessons = new Set();
+            }
+        }
+
+        // Save completed lessons
+        function saveCompletedLessons() {
+            try {
+                localStorage.setItem('homeschool_completed_lessons', JSON.stringify([...completedLessons]));
+            } catch (e) {
+                console.log('Could not save completed lessons');
+            }
+        }
+
+        // Update connection status
+        function updateConnectionStatus(status) {
+            connectionStatus = status;
+            const statusEl = document.getElementById('connectionStatus');
+            const textEl = document.getElementById('statusText');
+            
+            if (status === 'online') {
+                statusEl.className = 'connection-status status-online';
+                textEl.textContent = 'Online';
+            } else {
+                statusEl.className = 'connection-status status-offline';
+                textEl.textContent = 'Offline';
+            }
+        }
+
+       
+		// === Drawer elements and handlers ===
+			const drawer = document.getElementById('reschedDrawer');
+
+			function openReschedDrawer(){
+			  renderReschedDrawer();
+			  drawer.classList.add('show');
+			  drawer.setAttribute('aria-hidden','false');
+			}
+			function closeReschedDrawer(){
+			  drawer.classList.remove('show');
+			  drawer.setAttribute('aria-hidden','true');
+			}
+			function renderReschedDrawer(){
+			  document.getElementById('opt_shiftDays').value = RESCHED_OPTS.shiftDays;
+			  document.getElementById('opt_respectBreaks').checked = RESCHED_OPTS.respectBreaks;
+			  document.getElementById('opt_avoidDouble').checked   = RESCHED_OPTS.avoidDouble;
+			  document.getElementById('opt_maxPerDay').value       = RESCHED_OPTS.maxPerDay;
+			  document.getElementById('opt_preview').checked       = RESCHED_OPTS.preview;
+			  document.getElementById('opt_nudges').checked        = RESCHED_OPTS.nudges;
+
+			  const host = document.getElementById('opt_reasonTags');
+			  host.innerHTML = '';
+			  RESCHED_OPTS.reasonTags.forEach(tag=>{
+				const el = document.createElement('span');
+				el.className = 'tag' + (RESCHED_OPTS.activeTags.includes(tag) ? ' on' : '');
+				el.textContent = tag;
+				el.addEventListener('click', ()=>{
+				  const i = RESCHED_OPTS.activeTags.indexOf(tag);
+				  if (i >= 0) RESCHED_OPTS.activeTags.splice(i,1);
+				  else RESCHED_OPTS.activeTags.push(tag);
+				  saveReschedOptions();
+				  renderReschedDrawer();
+				});
+				host.appendChild(el);
+			  });
+			}
+
+			// after DOMContentLoaded setup:
+			function setupEventListeners() {
+			  document.querySelectorAll('.nav-tab').forEach(tab => {
+				tab.addEventListener('click', (e) => {
+				  const tabName = e.target.dataset.tab;
+				  switchTab(tabName);
+				});
+			  });
+			  // Day arrows
+			  
+				document.getElementById('dayPrev').addEventListener('click', () => {
+				  dayCursor.setDate(dayCursor.getDate() - 1);
+				  renderToday();
+				});
+				document.getElementById('dayNext').addEventListener('click', () => {
+				  dayCursor.setDate(dayCursor.getDate() + 1);
+				  renderToday();
+				});
+				document.getElementById('dayToday').addEventListener('click', () => {
+				  dayCursor = new Date();
+				  renderToday();
+				});
+				document.getElementById('weekPrev').addEventListener('click', () => {
+				  weekCursor.setDate(weekCursor.getDate() - 7);
+				  renderWeek();
+				});
+				document.getElementById('weekNext').addEventListener('click', () => {
+				  weekCursor.setDate(weekCursor.getDate() + 7);
+				  renderWeek();
+				});
+				document.getElementById('weekToday').addEventListener('click', () => {
+				  // If it’s Sat/Sun, jump to upcoming Monday; else current Monday
+				  weekCursor = isWeekend(new Date()) 
+					? getUpcomingMonday(new Date()) 
+					: getStartOfWeek(new Date());
+				  renderWeek();
+				});
+
+
+				document.addEventListener('click', (e)=>{
+				  if (e.target?.id === 'monthPrev') { monthCursor.setMonth(monthCursor.getMonth()-1); renderSchedule(); }
+				  if (e.target?.id === 'monthNext') { monthCursor.setMonth(monthCursor.getMonth()+1); renderSchedule(); }
+				  if (e.target?.id === 'monthToday'){ monthCursor = new Date(); renderSchedule(); }
+				});
+
+
+			  // NEW: Options button (exists only on the Rescheduler tab)
+			  document.addEventListener('click', (e)=>{
+				if (e.target && e.target.id === 'btnReschedOptions') openReschedDrawer();
+			  });
+
+			  // Close modal when clicking outside
+			  document.getElementById('rescheduleModal').addEventListener('click', (e) => {
+				if (e.target.id === 'rescheduleModal') closeRescheduleModal();
+			  });
+
+			  // Close drawer on ESC
+			  document.addEventListener('keydown', (e)=>{ if(e.key==='Escape') closeReschedDrawer(); });
+			}
+		
+
+
+			// Save/cancel in drawer:
+			document.addEventListener('click', (e)=>{
+			  if (e.target && e.target.id === 'optCancel') { closeReschedDrawer(); }
+			  if (e.target && e.target.id === 'optSave') {
+				RESCHED_OPTS.shiftDays     = parseInt(document.getElementById('opt_shiftDays').value || '0', 10);
+				RESCHED_OPTS.respectBreaks = document.getElementById('opt_respectBreaks').checked;
+				RESCHED_OPTS.avoidDouble   = document.getElementById('opt_avoidDouble').checked;
+				RESCHED_OPTS.maxPerDay     = parseInt(document.getElementById('opt_maxPerDay').value || '1', 10);
+				RESCHED_OPTS.preview       = document.getElementById('opt_preview').checked;
+				RESCHED_OPTS.nudges        = document.getElementById('opt_nudges').checked;
+				saveReschedOptions();
+				showMessage('Options saved', 'success');
+				closeReschedDrawer();
+			  }
+			});
+
+
+        // API call with JSONP for CORS bypass
+        // API call with JSONP for CORS bypass — with robust error/timeout handling
+	async function apiCall(action, params = {}) {
+			  // tiny helper so we don't forget to clean up
+			  function cleanup(name, tag) {
+				try { delete window[name]; } catch(_) {}
+				try { if (tag && tag.parentNode) tag.parentNode.removeChild(tag); } catch(_) {}
+			  }
+
+			  return new Promise((resolve, reject) => {
+				const callbackName = 'jsonp_cb_' + Date.now() + '_' + Math.random().toString(36).slice(2);
+				const url = new URL(CONFIG.API_URL);
+				url.searchParams.append('action', action);
+				url.searchParams.append('callback', callbackName);
+				Object.keys(params).forEach(k => url.searchParams.append(k, params[k]));
+
+				let callbackFired = false;
+				let finished = false;
+
+				// will run if the server actually returns:  callbackName({...})
+				window[callbackName] = function(response) {
+				  callbackFired = true;
+				  finished = true;
+				  cleanup(callbackName, script);
+
+				  if (response && response.success) {
+					updateConnectionStatus('online');
+					resolve(response.data);
+				  } else {
+					updateConnectionStatus('offline');
+					const errMsg = (response && response.error) || 'API reported failure';
+					console.error('[API]', action, '-> error payload:', response);
+					showMessage('API error: ' + errMsg, 'error');
+					reject(new Error(errMsg));
+				  }
+				};
+
+				const script = document.createElement('script');
+				script.src = url.toString();
+
+				// Fires when the <script> finishes loading — BUT that doesn't mean the callback ran.
+				script.onload = function() {
+				  // Give the callback a microtask tick to run first
+				  setTimeout(() => {
+					if (!callbackFired && !finished) {
+					  finished = true;
+					  cleanup(callbackName, script);
+					  updateConnectionStatus('offline');
+					  // This is the key signal that Google returned an HTML error page or a login page
+					  const msg = 'Google Script loaded but did not call JSONP callback. Is the Web App set to "Anyone"?';
+					  console.warn('[API]', action, '-> callback missing. Likely HTML error/login page.');
+					  showMessage(msg, 'error');
+					  reject(new Error('JSONP callback not fired'));
+					}
+				  }, 0);
+				};
+
+				script.onerror = function() {
+				  if (finished) return;
+				  finished = true;
+				  cleanup(callbackName, script);
+				  updateConnectionStatus('offline');
+				  const msg = 'Failed to load Google Script (network or bad URL).';
+				  console.error('[API]', action, '-> network/load error');
+				  showMessage(msg, 'error');
+				  reject(new Error(msg));
+				};
+
+				// Hard timeout — if neither onerror nor callback happen (rare but possible)
+				const TIMEOUT_MS = 12000; // 12s; tweak to taste
+				const t = setTimeout(() => {
+				  if (finished) return;
+				  finished = true;
+				  cleanup(callbackName, script);
+				  updateConnectionStatus('offline');
+				  const msg = 'Request timeout — Google Script did not respond in time.';
+				  console.error('[API]', action, '-> timeout');
+				  showMessage(msg, 'error');
+				  reject(new Error(msg));
+				}, TIMEOUT_MS);
+
+				// Make sure we clear the timer when done (in any code path above)
+				const _oldCb = window[callbackName];
+				window[callbackName] = function(resp) {
+				  clearTimeout(t);
+				  _oldCb(resp);
+				};
+
+				// Optimistically show "online" while the script tag is loading.
+				// We'll flip to offline again if the callback never fires.
+				updateConnectionStatus('online');
+				document.body.appendChild(script);
+			  });
+			}
+
+
+        // Load data from API
+        async function loadData() {
+            try {
+                console.log('Starting to load data...');
+                
+                // Load schedule data
+                scheduleData = await apiCall('getSchedule', {
+                    startDate: '2024-08-01',
+                    endDate: '2026-08-31'
+                });
+                
+                console.log('Raw scheduleData loaded:', scheduleData);
+                console.log('scheduleData length:', scheduleData ? scheduleData.length : 'undefined');
+                
+                if (scheduleData && scheduleData.length > 0) {
+                    console.log('First lesson:', scheduleData[0]);
+                    console.log('Date range:', scheduleData[0]?.date, 'to', scheduleData[scheduleData.length-1]?.date);
+                    
+                    // Check today's lessons
+                    const today = new Date().toISOString().split('T')[0];
+                    const todayLessons = scheduleData.filter(lesson => lesson.date === today);
+                    console.log('Today is:', today);
+                    console.log('Lessons for today:', todayLessons);
+                }
+                
+                // Load subject colors
+                try {
+                    subjectColors = await apiCall('getColors');
+                    console.log('Colors loaded:', subjectColors);
+                } catch (e) {
+                    console.log('Could not load colors, using defaults:', e);
+                    subjectColors = DEFAULT_COLORS;
+                }
+				// Load subject colors + ordering/meta
+				try {
+				  const meta = await apiCall('getSubjects'); // { subjects:[{name, child, active}], children:[...], colorMap:{...} }
+				  if (meta && meta.children) childOrder = meta.children.slice();
+				  if (meta && meta.subjects) subjectOrder = meta.subjects.map(s => s.name);
+				  if (meta && meta.colorMap) subjectColors = meta.colorMap;
+
+				  // Fallback to defaults if sheet has no colors
+				  if (!subjectColors || Object.keys(subjectColors).length === 0) {
+					subjectColors = DEFAULT_COLORS;
+				  }
+				} catch (e) {
+				  console.log('Subjects/colors fallback:', e);
+				  subjectColors = DEFAULT_COLORS;
+				}
+
+                
+            } catch (error) {
+                console.error('Failed to load data:', error);
+                scheduleData = [];
+                throw error;
+            }
+        }
+
+        // Update current date display
+        function updateCurrentDate() {
+            const now = new Date();
+            const options = { 
+                weekday: 'long', 
+                year: 'numeric', 
+                month: 'long', 
+                day: 'numeric' 
+            };
+            
+            document.getElementById('currentDate').textContent = 
+                now.toLocaleDateString('en-US', options);
+                
+            document.getElementById('todayDate').textContent = 
+                now.toLocaleDateString('en-US', { month: 'long', day: 'numeric' });
+                
+            document.getElementById('todayDay').textContent = 
+                now.toLocaleDateString('en-US', { weekday: 'long' });
+        }
+
+        // Tab switching
+        function switchTab(tabName) {
+            document.querySelectorAll('.nav-tab').forEach(tab => {
+                tab.classList.remove('active');
+            });
+            document.querySelector(`[data-tab="${tabName}"]`).classList.add('active');
+
+            document.querySelectorAll('.tab-content').forEach(content => {
+                content.classList.remove('active');
+            });
+            document.getElementById(tabName).classList.add('active');
+
+            currentView = tabName;
+			if (tabName === 'week' && isWeekend(new Date())) {
+			  weekCursor = getUpcomingMonday(new Date());
+			}
+
+            renderCurrentView();
+        }
+
+        // Render current view
+        function renderCurrentView() {
+            switch (currentView) {
+                case 'today':
+                    renderToday();
+                    break;
+                case 'week':
+                    renderWeek();
+                    break;
+                case 'schedule':
+                    renderSchedule();
+                    break;
+				case 'rescheduler': 
+					renderRescheduler(); 
+					break;  // <-- NEW
+            }
+        }
+
+        // Render today's lessons
+       function renderToday() {
+			  const container = document.getElementById('todayLessons');
+
+			  // If weekend, jump to upcoming Monday
+			  const d = new Date(dayCursor);
+			  const dow = d.getDay(); // 0 Sun ... 6 Sat
+			  if (dow === 6) d.setDate(d.getDate() + 2);
+			  if (dow === 0) d.setDate(d.getDate() + 1);
+			  dayCursor = d;
+
+			  // Update header
+			
+
+			  if (!scheduleData || scheduleData.length === 0) {
+				container.innerHTML = `
+				  <div class="no-lessons">
+					<h3>📡 Loading lessons...</h3>
+					<p>Please wait while we fetch your schedule.</p>
+				  </div>`;
+				return;
+			  }
+
+			  const today = formatDate(d);
+			  const lessons = scheduleData.filter(l => l.date === today);
+			  const breaks = lessons.filter(isBreakLike);
+			const normals = lessons.filter(l => !isBreakLike(l));
+
+
+			  if (lessons.length === 0) {
+				container.innerHTML = `
+				  <div class="no-lessons">
+					<h3>🎉 No lessons scheduled!</h3>
+					<p>Enjoy your free time or catch up on other activities.</p>
+					<p style="margin-top:16px; font-size:14px;">${today}</p>
+				  </div>`;
+				return;
+			  }
+
+			  // Group by (subject + lesson) to put shared subjects together
+			  const groups = groupBySubjectAndLesson(normals).sort((a,b) => {
+				// sort groups by subject, then first child by order
+				const s = compareByOrder(a.subject, b.subject, subjectOrder);
+				if (s !== 0) return s;
+				return compareByOrder(a.children[0] || '', b.children[0] || '', childOrder);
+			  });
+
+			  container.innerHTML = groups.map(g => {
+			  const breakBanner = breaks.length
+				  ? `<div class="lesson-card" style="background:#fff7ed;border-color:#fdba74">
+					   <div class="lesson-subject">🗓️ No School / Break</div>
+					   <div class="lesson-details">${
+						  breaks.map(b=>[b.subject,b.lesson].filter(Boolean).join(' • ')).join(', ')
+						}</div>
+					 </div>`
+				  : '';
+				container.innerHTML = breakBanner + groups.map(...).join('');
+				const lessonIdSeed = `${today}-${g.subject}-${g.lesson}`;
+				const childNames = g.children.sort((a,b)=>compareByOrder(a,b,childOrder)).join(' & ');
+				const color = getSubjectColor(g.subject);
+				  .join('');
+
+				// “details” line (no 👤). Example: "pp. 74–75" if present
+				const details = g.lesson ? `<div class="lesson-details" style="margin-top:4px;">${g.lesson}</div>` : '';
+
+				return `
+				  <div class="lesson-card" data-lesson-id="${lessonIdSeed}">
+					<div class="lesson-subject">
+					  <div class="subject-color" style="background-color:${getSubjectColor(g.subject)}"></div>
+					  ${g.subject}
+					</div>
+					<div class="chips">
+					  <span class="chip" style="--chip:${color}">
+						<span class="chip-dot"></span>${childNames}
+					  </span>
+					</div>
+					${details}
+				  </div>`;
+			  }).join('');
+			}
+
+        // Render week view
+        function renderWeek() {
+			  const container = document.getElementById('weekView');
+
+			  // ensure weekCursor is Monday-start
+			  weekCursor = getStartOfWeek(weekCursor);
+			  const days = [];
+			  for (let i = 0; i < 5; i++) { // Mon..Fri only
+				const d = new Date(weekCursor);
+				d.setDate(weekCursor.getDate() + i);
+				days.push(d);
+			  }
+
+			  // Header labels
+			  const end = new Date(weekCursor); end.setDate(weekCursor.getDate()+4);
+			  document.getElementById('weekRangeLabel').textContent =
+				`${weekCursor.toLocaleDateString('en-US', { month:'short', day:'numeric' })} – ${end.toLocaleDateString('en-US', { month:'short', day:'numeric' })}`;
+			  document.getElementById('weekRangeSub').textContent =
+				`${weekCursor.toLocaleDateString('en-US', { year:'numeric' })}`;
+
+			  if (!scheduleData || scheduleData.length === 0) {
+				container.innerHTML = `<div class="no-lessons"><h3>📡 Loading week...</h3></div>`;
+				return;
+			  }
+
+			  container.innerHTML = days.map(day => {
+				  const ymd = formatDate(day);
+
+				  // sort like you already do
+				  const dayLessons = scheduleData
+					.filter(l => l.date === ymd)
+					.sort(sortBySubjectThenChild);
+
+				  // split breaks vs normal
+				  const dayBreaks  = dayLessons.filter(isBreakLike);
+				  const dayNormals = dayLessons.filter(l => !isBreakLike(l));
+
+				  return `
+					<div class="day-card">
+					  <div class="day-header">
+						<div class="day-date">${day.toLocaleDateString('en-US', { month:'short', day:'numeric' })}</div>
+						<div class="day-name">${day.toLocaleDateString('en-US', { weekday: 'long' })}</div>
+					  </div>
+					  <div class="day-lessons">
+						${dayLessons.length === 0
+						  ? '<div style="color:#9ca3af; font-style:italic; text-align:center; padding:16px;">No lessons</div>'
+						  : `
+							  ${dayBreaks.length ? `
+								<div class="lesson-item" style="background:#fff7ed;border:1px dashed #fdba74;padding:8px;border-radius:8px;">
+								  <div style="font-weight:600;">🗓️ No School / Break</div>
+								  <div style="font-size:12px;color:#9a3412;">
+									${dayBreaks.map(b=>[b.subject,b.lesson].filter(Boolean).join(' • ')).join(', ')}
+								  </div>
+								</div>` : ''
+							  }
+							  ${dayNormals.map(lesson => `
+								<div class="lesson-item">
+								  <div class="subject-color" style="background-color:${getSubjectColor(lesson.subject)}"></div>
+								  <div>
+									<div style="font-weight:600;">${lesson.subject}</div>
+									<div style="font-size:12px; color:#64748b;">${formatLessonDetails(lesson)}</div>
+								  </div>
+								</div>
+							  `).join('')}
+							`
+						}
+					  </div>
+					</div>`;
+				}).join('');
+
+
+}
+        function renderSchedule() {
+			  const container = document.getElementById('scheduleView');
+			  if (!scheduleData || scheduleData.length === 0) {
+				container.innerHTML = `<div class="no-lessons"><h3>📡 Loading schedule...</h3></div>`;
+				return;
+			  }
+
+			  // Show the current month (you can later add arrows like week/day)
+			  const now = new Date();
+			  const year = now.getFullYear();
+			  const month = now.getMonth(); // 0-based
+			  const first = new Date(year, month, 1);
+	
+
+			  // Build a 6x7 grid, Sunday-start calendar
+			  const startCell = new Date(first);
+			  startCell.setDate(first.getDate() - first.getDay()); // back to Sunday
+			  const days = [];
+			  for (let i = 0; i < 42; i++) {
+				const d = new Date(startCell);
+				d.setDate(startCell.getDate()+i);
+				days.push(d);
+			  }
+
+			  const lessonsByDate = scheduleData.reduce((acc, l) => {
+				(acc[l.date] ||= []).push(l);
+				return acc;
+			  }, {});
+
+			  container.innerHTML = `
+				<div class="lesson-card">
+				  <div class="lesson-subject">
+					${now.toLocaleDateString('en-US', { month:'long', year:'numeric' })}
+				  </div>
+				  <div class="month-grid-wrap">
+					<div class="month-grid" style="display:grid; grid-template-columns: repeat(7, 1fr); gap:10px;">
+					${['Sun','Mon','Tue','Wed','Thu','Fri','Sat'].map(d=>`
+					  <div style="text-align:center; font-size:12px; color:#64748b; text-transform:uppercase; letter-spacing:.05em;">${d}</div>
+					`).join('')}
+					${days.map(d=>{
+					  const ymd = formatDate(d);
+					  const inMonth = d.getMonth() === month;
+					  const list = (lessonsByDate[ymd] || []).sort(sortBySubjectThenChild);
+					  return `
+						<div style="border:1px solid #e5e7eb; border-radius:10px; padding:8px; background:${inMonth ? 'white' : '#f8fafc'}; min-height:100px;">
+						  <div style="font-size:12px; color:${inMonth ? '#475569' : '#94a3b8'}; margin-bottom:6px;">${d.getDate()}</div>
+						  <div style="display:flex; flex-direction:column; gap:6px;">
+							${list.slice(0,4).map(l=>`
+							  <div style="display:flex; gap:6px; align-items:center;">
+								<div class="subject-color" style="background-color:${getSubjectColor(l.subject)}"></div>
+								<div style="font-size:12px; line-height:1.2;">
+								  <div style="font-weight:600;">${l.subject}</div>
+								  <div style="color:#64748b;">${formatLessonDetails(l)}</div>
+								</div>
+							  </div>
+							`).join('')}
+							${list.length>4 ? `<div style="font-size:12px; color:#64748b;">+${list.length-4} more</div>`:''}
+						  </div>
+						</div>`;
+					}).join('')}
+					</div>
+				  </div>
+				</div>`;
+			}
+
+
+		function renderRescheduler(){
+		  // set default drop target date to end of this month if empty
+		  const to = document.getElementById('toDate');
+		  if (!to.value) {
+			const d = new Date();
+			const end = new Date(d.getFullYear(), d.getMonth()+1, 0);
+			to.value = `${end.getFullYear()}-${String(end.getMonth()+1).padStart(2,'0')}-${String(end.getDate()).padStart(2,'0')}`;
+		  }
+		}
+
+        // Helper functions
+        function formatDate(date) {
+            const year = date.getFullYear();
+            const month = String(date.getMonth() + 1).padStart(2, '0');
+            const day = String(date.getDate()).padStart(2, '0');
+            return `${year}-${month}-${day}`;
+        }
+		function isBreakLike(l) {
+			  const s = (l.subject || '').toLowerCase();
+			  const t = (l.type || '').toLowerCase();
+			  return t === 'break' || s.includes('break') || s.includes('holiday') || s.includes('no school');
+			}
+
+		function isWeekend(d) {
+			  const g = d.getDay(); // 0=Sun,6=Sat
+			  return g === 0 || g === 6;
+			}
+			
+		function getUpcomingMonday(d) {
+		  const x = new Date(d);
+		  const day = x.getDay(); // 0..6 (Sun..Sat)
+		  const add = (1 - day + 7) % 7; // days until Monday
+		  x.setDate(x.getDate() + add);
+		  x.setHours(0,0,0,0);
+		  return x;
+		}
+		function normalizeToday(d) {
+		  return isWeekend(d) ? getUpcomingMonday(d) : d;
+		}
+
+
+        function getStartOfWeek(date) {
+			  const d = new Date(date);
+			  const day = (d.getDay() + 6) % 7; // Mon=0 … Sun=6
+			  d.setDate(d.getDate() - day);
+			  d.setHours(0,0,0,0);
+			  return d;
+			}
+
+        
+		function compareByOrder(a, b, orderArray) {
+			  const ia = orderArray.indexOf(a); const ib = orderArray.indexOf(b);
+			  if (ia === -1 && ib === -1) return a.localeCompare(b);
+			  if (ia === -1) return 1;
+			  if (ib === -1) return -1;
+			  return ia - ib;
+			}
+			function sortBySubjectThenChild(l1, l2) {
+			  const s = compareByOrder(l1.subject, l2.subject, subjectOrder);
+			  if (s !== 0) return s;
+			  return compareByOrder(l1.child || '', l2.child || '', childOrder);
+			}
+			// group lessons by same subject AND same lesson text
+			function groupBySubjectAndLesson(list) {
+			  const map = new Map();
+			  list.forEach(l => {
+				const key = `${l.subject}||${l.lesson||''}`;
+				if (!map.has(key)) map.set(key, { subject: l.subject, lesson: l.lesson || '', children: [] });
+				if (l.child) map.get(key).children.push(l.child);
+			  });
+			  return [...map.values()];
+			}
+			// “Joey • pp. 74–75” → you asked to avoid the 👤 and tidy the text
+			function formatLessonDetails(l) {
+			  const parts = [];
+			  if (l.child) parts.push(l.child); // single-line detail on week/month; chips used on Today
+			  if (l.lesson) parts.push(l.lesson);
+			  return parts.join(' • ');
+			}
+
+
+        function getSubjectColor(subject) {
+            return subjectColors[subject] || DEFAULT_COLORS[subject] || '#6b7280';
+        }
+
+        function showMessage(message, type = 'success') {
+            const existingMessage = document.querySelector('.message');
+            if (existingMessage) {
+                existingMessage.remove();
+            }
+
+            const messageDiv = document.createElement('div');
+            messageDiv.className = `message ${type}`;
+            messageDiv.innerHTML = `${type === 'success' ? '✅' : type === 'error' ? '❌' : '⚠️'} ${message}`;
+            
+            document.body.appendChild(messageDiv);
+            
+            setTimeout(() => messageDiv.classList.add('show'), 100);
+            
+            setTimeout(() => {
+                messageDiv.classList.remove('show');
+                setTimeout(() => messageDiv.remove(), 300);
+            }, 4000);
+        }
+
+        // Mark lesson complete
+        async function markComplete(lessonId) {
+            const lessonCard = document.querySelector(`[data-lesson-id="${lessonId}"]`);
+            if (lessonCard) {
+                lessonCard.classList.add('completing');
+            }
+
+            try {
+                // Mark complete locally
+                completedLessons.add(lessonId);
+                saveCompletedLessons();
+                
+                // Update UI
+                if (lessonCard) {
+                    lessonCard.classList.remove('completing');
+                    lessonCard.classList.add('completed');
+                    const button = lessonCard.querySelector('.btn-complete');
+                    if (button) {
+                        button.textContent = '✓ Completed';
+                        button.disabled = true;
+                    }
+                }
+
+                showMessage('Lesson marked complete!');
+
+            } catch (error) {
+                console.error('Error marking lesson complete:', error);
+                showMessage('Could not mark lesson complete. Please try again.', 'error');
+                
+                if (lessonCard) {
+                    lessonCard.classList.remove('completing');
+                }
+            }
+        }
+
+        // Reschedule modal functions
+        function openRescheduleModal(lessonId) {
+            const parts = lessonId.split('-');
+            const lessonData = {
+                id: lessonId,
+                date: parts[0],
+                subject: parts[1],
+                child: parts[2],
+                lesson: parts.slice(3).join('-')
+            };
+
+            currentRescheduleLesson = lessonData;
+            
+            // Format the subtitle
+            const originalDate = new Date(lessonData.date + 'T00:00:00');
+            const formattedDate = originalDate.toLocaleDateString('en-US', { 
+                weekday: 'long', 
+                month: 'short', 
+                day: 'numeric' 
+            });
+            
+            document.getElementById('rescheduleSubtitle').textContent = 
+                `${lessonData.subject} • ${lessonData.child} • ${formattedDate}`;
+            
+            // Set default new date to tomorrow
+            const tomorrow = new Date();
+            tomorrow.setDate(tomorrow.getDate() + 1);
+            document.getElementById('newDate').value = formatDate(tomorrow);
+            
+            document.getElementById('rescheduleReason').value = '';
+            document.getElementById('rescheduleModal').classList.add('show');
+        }
+
+        function closeRescheduleModal() {
+            document.getElementById('rescheduleModal').classList.remove('show');
+            currentRescheduleLesson = null;
+        }
+
+        async function confirmReschedule() {
+			  if (!currentRescheduleLesson) return;
+
+			  const newDate = document.getElementById('newDate').value;
+			  const reason  = document.getElementById('rescheduleReason').value.trim();
+
+			  if (!newDate) { showMessage('Please select a new date', 'error'); return; }
+			  if (!reason && RESCHED_OPTS.activeTags.length === 0) {
+				showMessage('Add a reason or pick a tag', 'error'); return;
+			  }
+
+			  const reasonFinal = [reason, ...RESCHED_OPTS.activeTags].filter(Boolean).join(' | ');
+
+			  const from = new Date(currentRescheduleLesson.date + 'T00:00:00');
+			  const to   = new Date(newDate + 'T00:00:00');
+			  showMessage(`Rescheduled ${currentRescheduleLesson.subject} • ${currentRescheduleLesson.child} from ${from.toLocaleDateString()} → ${to.toLocaleDateString()}`, 'success');
+
+			  const payload = {
+				fromDate: currentRescheduleLesson.date,
+				toDate:   newDate,
+				subject:  currentRescheduleLesson.subject,
+				child:    currentRescheduleLesson.child,
+				lesson:   currentRescheduleLesson.lesson,
+				reason:   reasonFinal,
+				options: {
+				  shiftDays: RESCHED_OPTS.shiftDays,
+				  respectBreaks: RESCHED_OPTS.respectBreaks,
+				  avoidDouble: RESCHED_OPTS.avoidDouble,
+				  maxPerDay: RESCHED_OPTS.maxPerDay,
+				  preview: RESCHED_OPTS.preview,
+				  nudges: RESCHED_OPTS.nudges
+				}
+			  };
+			  console.log('Reschedule request with options:', payload);
+
+			  // Later: call your backend here
+			  // await apiCall('rescheduleLesson', payload)  // when you support POST or JSONP for writes
+
+			  closeRescheduleModal();
+			}
+
+        
+    </script>
+</body>
+</html>
